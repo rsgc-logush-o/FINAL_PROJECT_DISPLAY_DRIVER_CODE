@@ -58,7 +58,7 @@ void setup() {
   pinMode(rowSelectD, OUTPUT);
   
   displayInterrupt.priority(0);
-  displayInterrupt.begin(displayToMatrix, 100000);
+  displayInterrupt.begin(displayToMatrix, 62500);
   
 
 }
@@ -74,30 +74,35 @@ void loop() {
 
 
 
-void updateRows(int row, uint32_t red, uint32_t green, uint32_t blue, uint32_t red1, uint32_t green1, uint32_t blue1 )
+
+
+void displayToMatrix()
 {
+  if(bamCounter == 1 || bamCounter == 3 || bamCounter == 7) bamBit++;
+  bamCounter++;
+  for(int i = 0; i < 16; i++)
+  {
+    digitalWriteFast(outputEnable, HIGH);
   
-  digitalWriteFast(outputEnable, HIGH);
-  
-  digitalWriteFast(latchPin, LOW);
+    digitalWriteFast(latchPin, LOW);
 
-  digitalWriteFast(rowSelectA, row & 1);
-  digitalWriteFast(rowSelectB, row>>1 & 1);
-  digitalWriteFast(rowSelectC, row>>2 & 1);
-  digitalWriteFast(rowSelectD, row>>3 & 1);
+    digitalWriteFast(rowSelectA, i & 1);
+    digitalWriteFast(rowSelectB, (i>>1) & 1);
+    digitalWriteFast(rowSelectC, (i>>2) & 1);
+    digitalWriteFast(rowSelectD, (i>>3) & 1);
 
   
-  for(int i = 0; i < 32; i++)
+  for(int j = 0; j < 32; j++)
   {
     
     digitalWriteFast(clockPin, LOW);
     
-    digitalWriteFast(redData, (red >> i) & 1);
-    digitalWriteFast(greenData, (green >> i) & 1);
-    digitalWriteFast(blueData, (blue >> i) & 1);
-    digitalWriteFast(redData1, (red1 >> i) & 1);
-    digitalWriteFast(greenData1, (green1 >> i) & 1);
-    digitalWriteFast(blueData1, (blue1 >> i) & 1);
+    digitalWriteFast(redData, (red[j][i] >> bamBit) & 1);
+    digitalWriteFast(greenData, (green[j][i] >> bamBit) & 1);
+    digitalWriteFast(blueData, (blue[j][i] >> bamBit) & 1);
+    digitalWriteFast(redData1, (red[j][i+16] >> bamBit) & 1);
+    digitalWriteFast(greenData1, (green[j][i+16] >> bamBit) & 1);
+    digitalWriteFast(blueData1, (blue[j][i+16] >> bamBit) & 1);
 
 
     
@@ -111,25 +116,21 @@ void updateRows(int row, uint32_t red, uint32_t green, uint32_t blue, uint32_t r
  
  
   digitalWriteFast(outputEnable, LOW);
+  }
 
- 
-}
-
-void displayToMatrix()
-{
-  for(int i = 0; i < 16; i++)
+  if(bamBit == 3 && bamCounter == 15)
   {
-    updateRows(i, 1023, 1023, 1023, 1023, 1023, 1023);
+    bamBit = 0;
+    bamCounter = 0;
   }
 }
 
 void writePixel(uint8_t x, uint8_t y, uint8_t r, uint8_t g, uint8_t b)
 {
-  for(int i = 0; i < 4; i++)
-  {
+ 
     red[x][y] = r;
     green[x][y] = g;
     blue[x][y] = b;
-  }
+  
 }
 

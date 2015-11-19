@@ -1,18 +1,26 @@
-uint8_t clockPin = B00000001;
-uint8_t latchPin = B01000000;
-uint8_t outputEnable = B1000000;
-uint8_t redData = B00000001;
-uint8_t blueData = B00010000;
-uint8_t greenData = B0000100;
-uint8_t redData1 = B00000010;
-uint8_t greenData1 = B00001000;
-uint8_t blueData1 = B00100000;
-uint8_t rowSelectA = B00000010;
-uint8_t rowSelectB = B00000100;
-uint8_t rowSelectC = B00001000;
-uint8_t rowSelectD = B00010000;
+
 
 IntervalTimer displayInterrupt;
+
+# define clockPin 2
+# define latchPin 3
+# define outputEnable 4
+# define redData 5
+# define blueData 9
+# define greenData 7
+# define redData1 6
+# define greenData1 8
+# define blueData1 10
+# define rowSelectA 11
+# define rowSelectB 12
+# define rowSelectC 13
+# define rowSelectD 14
+
+int bamBit;
+int bamCounter;
+uint8_t red[32][32];
+uint8_t green[32][32];
+uint8_t blue[32][32];
 
 //RED DATA PD0
 //RED DATA1 PD1
@@ -33,8 +41,7 @@ void setup() {
 
 
 
-DDRD |= 11111111;
-DDRC |= 00011111;
+
 
   pinMode(clockPin, OUTPUT);
   pinMode(latchPin, OUTPUT);
@@ -69,45 +76,43 @@ void loop() {
 
 void updateRows(int row, uint32_t red, uint32_t green, uint32_t blue, uint32_t red1, uint32_t green1, uint32_t blue1 )
 {
-  PORTC &= ~B00011110;
-  //digitalWrite(outputEnable, HIGH);
-  PORTD |= outputEnable;
-  //digitalWrite(latchPin, LOW);
-  PORTD &= ~latchPin;
-//  digitalWrite(rowSelectA, row & B00000001);
-//  digitalWrite(rowSelectB, row & B00000010);
-//  digitalWrite(rowSelectC, row & B00000100);
-//  digitalWrite(rowSelectD, row & B00001000);
+  
+  digitalWriteFast(outputEnable, HIGH);
+  
+  digitalWriteFast(latchPin, LOW);
 
-  PORTC |= row<<1;
+  digitalWriteFast(rowSelectA, row & 1);
+  digitalWriteFast(rowSelectB, row>>1 & 1);
+  digitalWriteFast(rowSelectC, row>>2 & 1);
+  digitalWriteFast(rowSelectD, row>>3 & 1);
+
+  
   for(int i = 0; i < 32; i++)
   {
     
-    //digitalWrite(clockPin, LOW);
-    PORTC &= ~clockPin;
-//    digitalWrite(redData, (red >> i) & 1);
-//    digitalWrite(greenData, (green >> i) & 1);
-//    digitalWrite(blueData, (blue >> i) & 1);
-//    digitalWrite(redData1, (red1 >> i) & 1);
-//    digitalWrite(greenData1, (green1 >> i) & 1);
-//    digitalWrite(blueData1, (blue1 >> i) & 1);
+    digitalWriteFast(clockPin, LOW);
+    
+    digitalWriteFast(redData, (red >> i) & 1);
+    digitalWriteFast(greenData, (green >> i) & 1);
+    digitalWriteFast(blueData, (blue >> i) & 1);
+    digitalWriteFast(redData1, (red1 >> i) & 1);
+    digitalWriteFast(greenData1, (green1 >> i) & 1);
+    digitalWriteFast(blueData1, (blue1 >> i) & 1);
 
-    PORTD &= 11000000;
+
     
-    PORTD |= (redData | (red >> i) ) | (redData1 | (red1 >> i << 1)) | (greenData | (green >> i << 2)) | (greenData1 |(green1 >> i << 3)) | (blueData | (blue >> i << 4)) | (blueData1 | (blue1 >> i << 5));
-    
-    PORTC |= clockPin;
+    digitalWriteFast(clockPin, HIGH);
     
    
     
   }
  
- // digitalWrite(latchPin, HIGH);
- PORTD &= ~latchPin;
+  digitalWriteFast(latchPin, HIGH);
  
-  //digitalWrite(outputEnable, LOW);
+ 
+  digitalWriteFast(outputEnable, LOW);
 
-  PORTD &= ~outputEnable;
+ 
 }
 
 void displayToMatrix()
@@ -118,5 +123,13 @@ void displayToMatrix()
   }
 }
 
-
+void writePixel(uint8_t x, uint8_t y, uint8_t r, uint8_t g, uint8_t b)
+{
+  for(int i = 0; i < 4; i++)
+  {
+    red[x][y] = r;
+    green[x][y] = g;
+    blue[x][y] = b;
+  }
+}
 

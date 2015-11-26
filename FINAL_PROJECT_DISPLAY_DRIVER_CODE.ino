@@ -49,8 +49,9 @@ int row = 0;
 
 void setup() {
 
+delay(10000);
 
-
+Serial.begin(9600);
 
 
 
@@ -77,22 +78,35 @@ void setup() {
 
   
   //SETTING UP THE TIMER INTERRUPT
-  displayInterrupt.priority(0);
+//  displayInterrupt.priority(0);
   displayInterrupt.begin(displayToMatrix, 75);
+
+Serial.begin(9600);
+contactProcessing();
+
   
 
 }
 
 void loop() {
 
-//THIS LOOP IS SETTING EVERY PIXEL TO WHITE
-for(int i = 0; i < 32; i++)
-{
-  for(int j = 0; j < 32; j++)
+if(Serial.available() > 0)
+ {
+  Serial.println('R');
+  for(int i = 0; i < 32; i++)
   {
-    writePixel(j, i, 15, 15, 15);
+    for(int j = 0; j < 32; j++)
+    {
+      red[i][j] = Serial.read();
+      Serial.println('N');
+      green[i][j] = Serial.read();
+      Serial.println('N');
+      blue[i][j] = Serial.read();
+      Serial.println('N');
+    }
   }
-}
+ }
+
   
 
 }
@@ -103,6 +117,7 @@ for(int i = 0; i < 32; i++)
 
 void displayToMatrix()//THIS IS THE FUNCTION THAT UPDATES THE DISPLAY
 {
+ 
   //UPDATING THE BAM BIT AND BAM COUNTER
   if(bamCounter == 16 || bamCounter == 48 || bamCounter == 112) bamBit++;
   bamCounter++;
@@ -128,8 +143,9 @@ void displayToMatrix()//THIS IS THE FUNCTION THAT UPDATES THE DISPLAY
           GPIOD_PCOR = B00111111;
 
           //SETTING ALL OF THE DATA PINS TO THEIR VALUE IN THE CURRENT BIT FOR BIT ANGLE MODULATION
+          
           GPIOD_PSOR = (((red[i][row] >> bamBit) & 1) | (((red[i][row + 16] >> bamBit) & 1) << redData1) | (((green[i][row] >> bamBit) & 1) << greenData) | (((green[i][row + 16] >> bamBit) & 1) << greenData1) | (((blue[i][row] >> bamBit) & 1) << blueData) | (((blue[i][row + 16] >> bamBit) & 1) << blueData1));
-
+          
 
     
           //SETTING THE CLOCKPIN HIGH BECAUSE THE DATA IS SET ON THE RISING EDGE OF THE CLOCKPIN
@@ -157,6 +173,8 @@ void displayToMatrix()//THIS IS THE FUNCTION THAT UPDATES THE DISPLAY
       row++;
       //IF THE ROW HAS REACHED ITS LIMIT RESET IT
       if(row == 16) row = 0;
+
+      
 }
 
 void writePixel(uint8_t x, uint8_t y, uint8_t r, uint8_t g, uint8_t b)//THE FUNCTION TO WRITE TO THE PIXELS
@@ -168,3 +186,11 @@ void writePixel(uint8_t x, uint8_t y, uint8_t r, uint8_t g, uint8_t b)//THE FUNC
   
 }
 
+void contactProcessing()
+{
+  while(Serial.available() <= 0)
+  {
+    Serial.println('1');
+    delay(250);
+  }
+}

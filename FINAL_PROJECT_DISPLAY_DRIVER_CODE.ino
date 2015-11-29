@@ -22,9 +22,9 @@ int bamBit;
 int bamCounter;
 
 //THE COLOUR VALUES FOR EACH PIXEL
-uint8_t red[32][32];
-uint8_t green[32][32];
-uint8_t blue[32][32];
+int red[32][32];
+int green[32][32];
+int blue[32][32];
 
 //THIS KEEPS TRACK OF WHICH ROW IT IS UPDATING
 int row = 0;
@@ -49,7 +49,7 @@ int row = 0;
 
 void setup() {
 
-delay(10000);
+
 
 Serial.begin(9600);
 
@@ -79,10 +79,11 @@ Serial.begin(9600);
   
   //SETTING UP THE TIMER INTERRUPT
 //  displayInterrupt.priority(0);
-  displayInterrupt.begin(displayToMatrix, 75);
-
 Serial.begin(9600);
 contactProcessing();
+  displayInterrupt.begin(displayToMatrix, 75);
+
+
 
   
 
@@ -90,23 +91,63 @@ contactProcessing();
 
 void loop() {
 
+//if(Serial.available() > 0)
+//{
+//  String dataStorage;
+//while(Serial.available() > 0)
+// {
+//  Serial.println('R');
+//   
+//
+//   dataStorage += Serial.read();
+// }
+//
+//  for(int i = 0; i < 32; i++)
+//  {
+//    for(int j = 0; j < 32; j++)
+//    {
+//      int val = dataStorage.indexOf(",");
+//      red[i][j] = atol(dataStorage.substring(0,val).c_str());
+//      dataStorage = dataStorage.substring(val+1);
+//
+//      val = dataStorage.indexOf(",");
+//      green[i][j] = atol(dataStorage.substring(0,val).c_str());
+//      dataStorage = dataStorage.substring(val+1);
+//
+//      val = dataStorage.indexOf(",");
+//      blue[i][j] = atol(dataStorage.substring(0,val).c_str());
+//      dataStorage = dataStorage.substring(val+1);
+//    }
+//  }
+// 
+//}
+
 if(Serial.available() > 0)
- {
-  Serial.println('R');
+{
+  Serial.println('S');
+
   for(int i = 0; i < 32; i++)
   {
     for(int j = 0; j < 32; j++)
     {
+      while(Serial.read() != 'R');
+      Serial.println('R');
+      while(Serial.read == 'R');
       red[i][j] = Serial.read();
-      Serial.println('N');
+
+      while(Serial.read() != 'G');
+      Serial.println('G');
+      while(Serial.read == 'G');
       green[i][j] = Serial.read();
-      Serial.println('N');
+
+      while(Serial.read() != 'B');
+      Serial.println('B');
+      while(Serial.read == 'B');
       blue[i][j] = Serial.read();
-      Serial.println('N');
+      
     }
   }
- }
-
+}
   
 
 }

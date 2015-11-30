@@ -91,60 +91,39 @@ contactProcessing();
 
 void loop() {
 
-//if(Serial.available() > 0)
-//{
-//  String dataStorage;
-//while(Serial.available() > 0)
-// {
-//  Serial.println('R');
-//   
-//
-//   dataStorage += Serial.read();
-// }
-//
-//  for(int i = 0; i < 32; i++)
-//  {
-//    for(int j = 0; j < 32; j++)
-//    {
-//      int val = dataStorage.indexOf(",");
-//      red[i][j] = atol(dataStorage.substring(0,val).c_str());
-//      dataStorage = dataStorage.substring(val+1);
-//
-//      val = dataStorage.indexOf(",");
-//      green[i][j] = atol(dataStorage.substring(0,val).c_str());
-//      dataStorage = dataStorage.substring(val+1);
-//
-//      val = dataStorage.indexOf(",");
-//      blue[i][j] = atol(dataStorage.substring(0,val).c_str());
-//      dataStorage = dataStorage.substring(val+1);
-//    }
-//  }
-// 
-//}
-
 if(Serial.available() > 0)
 {
-  Serial.println('S');
-
   for(int i = 0; i < 32; i++)
   {
+   
     for(int j = 0; j < 32; j++)
     {
-      while(Serial.read() != 'R');
-      Serial.println('R');
-      while(Serial.read == 'R');
-      red[i][j] = Serial.read();
+      int k = 0;
+      while(k < 3)
+      {
+        if(Serial.available() > 0)
+        {
+          switch(k)
+          {
 
-      while(Serial.read() != 'G');
-      Serial.println('G');
-      while(Serial.read == 'G');
-      green[i][j] = Serial.read();
+            case 0:
+              red[i][j] = Serial.read();
 
-      while(Serial.read() != 'B');
-      Serial.println('B');
-      while(Serial.read == 'B');
-      blue[i][j] = Serial.read();
-      
+              break;
+
+            case 1:
+              green[i][j] = Serial.read();
+
+              break;
+
+            case 2:
+              blue[i][j] = Serial.read();
+
+              break;
+          }
+          k++;
+        }
+      }
     }
   }
 }
@@ -231,7 +210,10 @@ void contactProcessing()
 {
   while(Serial.available() <= 0)
   {
-    Serial.println('1');
+    Serial.println("Y");
     delay(250);
   }
 }
+
+
+

@@ -18,16 +18,20 @@ IntervalTimer displayInterrupt;//SETTING THE TIMER INTERRUPT OBJECT THIS IS TEMP
 # define rowSelectD 4
 
 //THESE ARE USED FOR KEEPING TRACK OF WHAT BAM BIT THE PROGRAM IS ON
-int bamBit;
-int bamCounter;
+uint8_t bamBit;
+uint8_t bamCounter;
 
 //THE COLOUR VALUES FOR EACH PIXEL
-int red[32][32];
-int green[32][32];
-int blue[32][32];
+uint8_t red[32][32];
+uint8_t green[32][32];
+uint8_t blue[32][32];
+
+uint8_t redBuf[32][32];
+uint8_t greenBuf[32][32];
+uint8_t blueBuf[32][32];
 
 //THIS KEEPS TRACK OF WHICH ROW IT IS UPDATING
-int row = 0;
+uint8_t row = 0;
 
 
 //{|THIS IS A TABLE TO KEEP TRACK OF WHICH PIN IS WHERE ON EACH PORT|}
@@ -81,7 +85,7 @@ Serial.begin(9600);
 //  displayInterrupt.priority(0);
 Serial.begin(9600);
 contactProcessing();
-  displayInterrupt.begin(displayToMatrix, 75);
+  displayInterrupt.begin(displayToMatrix, 50);
 
 
 
@@ -90,6 +94,8 @@ contactProcessing();
 }
 
 void loop() {
+
+  
 
 if(Serial.available() > 0)
 {
@@ -184,7 +190,7 @@ void displayToMatrix()//THIS IS THE FUNCTION THAT UPDATES THE DISPLAY
       GPIOD_PCOR = (1 << outputEnable);
  
       //IF THE BAM HAS REACHED IT'S LIMIT RESET IT
-      if(bamBit == 3 && bamCounter == 240)
+      if(bamCounter == 240)
       {
         bamBit = 0;
         bamCounter = 0;

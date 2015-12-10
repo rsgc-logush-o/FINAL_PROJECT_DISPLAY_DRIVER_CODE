@@ -1,8 +1,21 @@
 
+//////////////////////////////////////////////////
+//               OLIVER LOGUSH                  //
+//                   2015                       //
+//  DISPLAY DRIVER FOR A 32x32 RGB LED DISPLAY  //
+//                                              //
+//                Version 1.0                   //
+//                                              //
+//                                              //
+//////////////////////////////////////////////////
 
-IntervalTimer displayInterrupt;//SETTING THE TIMER INTERRUPT OBJECT THIS IS TEMPORARY I AM GOING TO USE THE ACTUAL TIMER REGISTERS ON THE PROCESSOR
 
-//THESE ARE ALL OF THE PINS I AM USING THEY ARE SET TO THEIR REGION ON THEIR PORT
+//This is the interval timer that calls an iterrupt
+IntervalTimer displayInterrupt;
+
+
+
+//Defining all of the pins locations on each port register
 # define clockPin 0
 # define latchPin 6
 # define outputEnable 7
@@ -17,20 +30,16 @@ IntervalTimer displayInterrupt;//SETTING THE TIMER INTERRUPT OBJECT THIS IS TEMP
 # define rowSelectC 3
 # define rowSelectD 4
 
-//THESE ARE USED FOR KEEPING TRACK OF WHAT BAM BIT THE PROGRAM IS ON
+//These are the variables that keep track of where the bit angle modulation is at
 uint8_t bamBit;
 uint8_t bamCounter;
 
-//THE COLOUR VALUES FOR EACH PIXEL
+//These are the arrays for each colour value of each pixel
 uint8_t red[32][32];
 uint8_t green[32][32];
 uint8_t blue[32][32];
 
-uint8_t redBuf[32][32];
-uint8_t greenBuf[32][32];
-uint8_t blueBuf[32][32];
-
-//THIS KEEPS TRACK OF WHICH ROW IT IS UPDATING
+//This keeps track of the row that the program is updating
 uint8_t row = 0;
 
 
@@ -54,167 +63,168 @@ uint8_t row = 0;
 void setup() {
 
 
+  //Begins the serial communication
+  Serial.begin(9600);
 
-Serial.begin(9600);
 
 
+  //Setting all of the pins used in PORTC as GPIO pins
+  PORTC_PCR0 = (1 << 8);
+  PORTC_PCR1 = (1 << 8);
+  PORTC_PCR2 = (1 << 8);
+  PORTC_PCR3 = (1 << 8);
+  PORTC_PCR4 = (1 << 8);
 
-  //SETTING EACH PIN THAT THE PROGRAM IS USING ON PORTC AS A GPIO PIN
-  PORTC_PCR0 = (1<<8);
-  PORTC_PCR1 = (1<<8);
-  PORTC_PCR2 = (1<<8);
-  PORTC_PCR3 = (1<<8);
-  PORTC_PCR4 = (1<<8);
-  
-  //SETTING EACH PIN THAT THE PROGRAM IS USING ON PORTC AS A GPIO PIN
-  PORTD_PCR0 = (1<<8);
-  PORTD_PCR1 = (1<<8);
-  PORTD_PCR2 = (1<<8);
-  PORTD_PCR3 = (1<<8);
-  PORTD_PCR4 = (1<<8);
-  PORTD_PCR5 = (1<<8);
-  PORTD_PCR6 = (1<<8);
-  PORTD_PCR7 = (1<<8);
+  //Setting all of the pins used in PORTD as GPIO pins
+  PORTD_PCR0 = (1 << 8);
+  PORTD_PCR1 = (1 << 8);
+  PORTD_PCR2 = (1 << 8);
+  PORTD_PCR3 = (1 << 8);
+  PORTD_PCR4 = (1 << 8);
+  PORTD_PCR5 = (1 << 8);
+  PORTD_PCR6 = (1 << 8);
+  PORTD_PCR7 = (1 << 8);
 
-  //SETTING THE PINS THE PROGRAM IS USING ON PORT C AND D AS OUTPUTS
+  //Setting the appropriate pins as outputs
   GPIOC_PDDR = B00011111;
   GPIOD_PDDR = B11111111;
 
-  
-  //SETTING UP THE TIMER INTERRUPT
-//  displayInterrupt.priority(0);
-Serial.begin(9600);
-contactProcessing();
+
+
+  //call contactProcessing which does not allow the program to start until it has recieved communication from processing
+  contactProcessing();
+  //Initialize the displayInterrupt calling it every 50 microseconds to call the displayToMatrix function
   displayInterrupt.begin(displayToMatrix, 50);
 
 
 
-  
+
 
 }
 
 void loop() {
 
-  
 
-if(Serial.available() > 0)
-{
-  for(int i = 0; i < 32; i++)
+  //If it recieves something over the serial port it will begin these loops to recieve the data and store it
+  if (Serial.available() > 0)
   {
-   
-    for(int j = 0; j < 32; j++)
+    for (int i = 0; i < 32; i++)
     {
-      int k = 0;
-      while(k < 3)
+
+      for (int j = 0; j < 32; j++)
       {
-        if(Serial.available() > 0)
+        int k = 0;
+        while (k < 3)
         {
-          switch(k)
+          if (Serial.available() > 0)
           {
+            switch (k)
+            {
 
-            case 0:
-              red[i][j] = Serial.read();
+              case 0:
+                red[i][j] = Serial.read();
 
-              break;
+                break;
 
-            case 1:
-              green[i][j] = Serial.read();
+              case 1:
+                green[i][j] = Serial.read();
 
-              break;
+                break;
 
-            case 2:
-              blue[i][j] = Serial.read();
+              case 2:
+                blue[i][j] = Serial.read();
 
-              break;
+                break;
+            }
+            k++;
           }
-          k++;
         }
       }
     }
   }
+
+
 }
-  
-
-}
 
 
 
 
 
-void displayToMatrix()//THIS IS THE FUNCTION THAT UPDATES THE DISPLAY
+void displayToMatrix()
 {
- 
-  //UPDATING THE BAM BIT AND BAM COUNTER
-  if(bamCounter == 16 || bamCounter == 48 || bamCounter == 112) bamBit++;
+
+  //This increments the bamBit once the bamCounter reaches the appropriate value to move on
+  if (bamCounter == 16 || bamCounter == 48 || bamCounter == 112) bamBit++;
+  //Increments the bam counter once per cycle
   bamCounter++;
-  
-
-    //SETTING THE OUPUT ENABLE PIN HIGH SO THERE IS NOTHING DISPLAYING WHEN SENDING THE DATA THIS IS TO PREVENT A GHOSTING EFFECT FROM HAPPENING
-    GPIOD_PSOR = (1 << outputEnable);
-
-    //SETTING THE LATCHPIN LOW TO ALLOW DATA TO BE SHIFTED IN
-    GPIOD_PCOR = (1 << latchPin);
 
 
-     //SELECTING WHICH ROW IS TURNED ON USING THE DEMUXER ON THE MATRIX
-     GPIOC_PDOR = (row << 1);
-  
-        for(int i = 0; i < 32; i++)
-        {
-          //WRITING THE CLOCKPIN LOW
-          GPIOC_PCOR = (1 << clockPin);
-    
+  //This sets the latchPin low and outputEnable high to allow new data to be shifted in
+  GPIOD_PSOR = (1 << outputEnable);
+  GPIOD_PCOR = (1 << latchPin);
 
-          //SETTING ALL OF THE DATA BITS IN PORTD LOW SO THAT SETTING THEM HIGH WORKS PROPERLY IF THIS DID NOT HAPPEN THEN I WOULD NEED TO SET THEM ALL AND THAT WOULD INTERFERE WITH THE LATCH AND OUTPUTENABLE PINS
-          GPIOD_PCOR = B00111111;
 
-          //SETTING ALL OF THE DATA PINS TO THEIR VALUE IN THE CURRENT BIT FOR BIT ANGLE MODULATION
-          
-          GPIOD_PSOR = (((red[i][row] >> bamBit) & 1) | (((red[i][row + 16] >> bamBit) & 1) << redData1) | (((green[i][row] >> bamBit) & 1) << greenData) | (((green[i][row + 16] >> bamBit) & 1) << greenData1) | (((blue[i][row] >> bamBit) & 1) << blueData) | (((blue[i][row + 16] >> bamBit) & 1) << blueData1));
-          
+  //Setting the row demux to the row number it is on
+  GPIOC_PDOR = (row << 1);
+
+  //This loop shifts out all of the data in the right bam bit to the right row
+  for (int i = 0; i < 32; i++)
+  {
+    //This writes the clockPin low
+    GPIOC_PCOR = (1 << clockPin);
+
+
+    //This clears the data pins
+    GPIOD_PCOR = B00111111;
 
     
-          //SETTING THE CLOCKPIN HIGH BECAUSE THE DATA IS SET ON THE RISING EDGE OF THE CLOCKPIN
-          GPIOC_PSOR = (1 << clockPin);
-    
-        }
-    
-  
- 
- 
-      //SETTING THE LATCHPIN HIGH TO LATCH THE DATA IN
-      GPIOD_PSOR = (1 << latchPin);
- 
- 
-      //SETTING THE OUPUTENABLE PIN LOW TO DISPLAY THE DATA
-      GPIOD_PCOR = (1 << outputEnable);
- 
-      //IF THE BAM HAS REACHED IT'S LIMIT RESET IT
-      if(bamCounter == 240)
-      {
-        bamBit = 0;
-        bamCounter = 0;
-      }
-      //INCREMENT THE ROW IN WHICH YOU ARE WRITING TO
-      row++;
-      //IF THE ROW HAS REACHED ITS LIMIT RESET IT
-      if(row == 16) row = 0;
+    //This snippet of code sets the data pins to the values they need to be based on the row count and the bamBit
+    GPIOD_PSOR = (((red[i][row] >> bamBit) & 1) | (((red[i][row + 16] >> bamBit) & 1) << redData1) | (((green[i][row] >> bamBit) & 1) << greenData) | (((green[i][row + 16] >> bamBit) & 1) << greenData1) | (((blue[i][row] >> bamBit) & 1) << blueData) | (((blue[i][row + 16] >> bamBit) & 1) << blueData1));
 
-      
+
+
+    //This sets the clockPin high
+    GPIOC_PSOR = (1 << clockPin);
+
+  }
+
+
+
+
+  //Set the latchPin high and outputEnable low to allow the pixels to be displayed
+  GPIOD_PSOR = (1 << latchPin);
+  GPIOD_PCOR = (1 << outputEnable);
+
+  //If the bamCounter has reached the max value reset it and the bamBit to 0
+  if (bamCounter == 240)
+  {
+    bamBit = 0;
+    bamCounter = 0;
+  }
+
+  //Increment the row counter
+  row++;
+
+  //If the row has reached 16 reset it
+  if (row == 16) row = 0;
+
+
 }
 
-void writePixel(uint8_t x, uint8_t y, uint8_t r, uint8_t g, uint8_t b)//THE FUNCTION TO WRITE TO THE PIXELS
+//The function to write individual pixels (used mainly for debugging)
+void writePixel(uint8_t x, uint8_t y, uint8_t r, uint8_t g, uint8_t b)
 {
-    //WRITING THE VALUE OF RED GREEN AND BLUE TO THE SELECTED PIXELS
-    red[x][y] = r;
-    green[x][y] = g;
-    blue[x][y] = b;
   
+  red[x][y] = r;
+  green[x][y] = g;
+  blue[x][y] = b;
+
 }
 
+//This is the function that halts the program until processing has sent something to confirm the connection
 void contactProcessing()
 {
-  while(Serial.available() <= 0)
+  while (Serial.available() <= 0)
   {
     Serial.println("Y");
     delay(250);
